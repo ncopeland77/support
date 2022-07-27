@@ -57,12 +57,19 @@ table_conf AS (
   WHERE column2 <> 'N/A'
 ),
 /*Some tables have no RECORD_ID field, then we use NULL instead*/
-record_id_null AS (
-  SELECT *
+special_cases AS (
+  SELECT 
+    column1 as source_table,
+    column2 as source_col,
+    column3 as target_table,
+    column4 as target_col
   FROM (
       VALUES 
-      (1, 'CJI_PAC_OUTCOMES_SCORECARD'), 
-      (2, 'CJI_PAC_COST_SCORECARD')
+      ('VRDC_CJI_PAC_OUTCOMES_SCORECARD','0','CJI_PAC_OUTCOMES_SCORECARD','LOAD_FILE_ROW_NUM'),
+      ('VRDC_CJI_PAC_COST_SCORECARD','0','CJI_PAC_COST_SCORECARD','LOAD_FILE_ROW_NUM'),
+      ('VRDC_PROFILE_LIST_ATTR_NPI','SRC_FK_PROVIDER_ID','PROVIDER_COST_UTILIZATION_ATTR','PROVIDER_ID'),
+      ('VRDC_PROFILE_LIST_PROVIDER','SRC_FK_PROVIDER_ID','PROVIDER_COST_UTILIZATION_PRAC','PROVIDER_ID'),
+      ('VRDC_PROFILE_LIST_SPECIALIST','SRC_FK_PROVIDER_ID','PROVIDER_COST_UTILIZATION_SPECIALIST','PROVIDER_ID')
       )
 ),
 columns_translator AS (
@@ -74,17 +81,15 @@ SELECT
    CASE 
       WHEN target_cols_info.column_name = 'LOAD_FILE_NM' AND table_conf.file_base_name = 'no data' THEN  CONCAT('''historical/historical/',target_cols_info.table_name,'''')
       WHEN target_cols_info.column_name = 'LOAD_FILE_NM' THEN CONCAT('''historical/historical/',table_conf.file_base_name,'''')
-      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' AND record_id_null.column2 = NULL THEN 'RECORD_ID' 
-      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN 'NULL' /*Some tables have no RECORD_ID field, then we use NULL instead*/
-      WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_ATTR_NPI' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
-      WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_PROVIDER' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
-      WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_SPECIALIST' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
-      ELSE CONCAT('SRC_',target_cols_info.column_name) 
+      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN COALESCE(special_cases.source_col,'RECORD_ID')
+      ELSE COALESCE(special_cases.source_col,CONCAT('SRC_',target_cols_info.column_name))
    END AS source_col,
    target_cols_info.ordinal_position
 FROM table_conf 
 INNER JOIN DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS target_cols_info ON table_conf.target_table = target_cols_info.table_name
-LEFT JOIN record_id_null ON record_id_null.column2 = target_cols_info.table_name
+LEFT JOIN special_cases 
+    ON special_cases.target_table = target_cols_info.table_name
+    AND special_cases.target_col = target_cols_info.column_name
 WHERE  target_cols_info.table_schema = (SELECT target_schema FROM params)
 ORDER BY target_cols_info.table_schema,target_cols_info.table_name,target_cols_info.ordinal_position
 )
