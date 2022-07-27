@@ -83,23 +83,16 @@ SELECT
       WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN 'NULL' /*Some tables have no RECORD_ID field, then we use NULL instead*/
       WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_ATTR_NPI' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
       ELSE CONCAT('SRC_',target_cols_info.column_name) 
-   END AS source_col
-FROM DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS target_cols_info
+   END AS source_col,
+   target_cols_info.ordinal_position
+FROM table_conf 
+INNER JOIN DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS target_cols_info ON table_conf.target_table = target_cols_info.table_name
 LEFT JOIN record_id_null ON record_id_null.column2 = target_cols_info.table_name
-INNER JOIN table_conf ON table_conf.target_table = target_cols_info.table_name
 WHERE  target_cols_info.table_schema = (SELECT target_schema FROM params)
 ORDER BY target_cols_info.table_schema,target_cols_info.table_name,target_cols_info.ordinal_position
 )
 SELECT
-    CONCAT('INSERT INTO ',(SELECT target_database FROM params),'.',target_table_info.table_schema,'.',target_table_info.table_name,' (',listagg(columns_translator.target_col, ','),') SELECT ',listagg(columns_translator.source_col, ','), ' FROM ',(SELECT source_database FROM params),'.',(SELECT source_schema FROM params),'.',source_table_info.table_name, ' WHERE EFFECTIVE_FLAG AND RECORD_STATUS_CD = ''a'';')
-FROM DEV_STAGE_RAW.INFORMATION_SCHEMA.TABLES target_table_info 
-INNER JOIN columns_translator 
-    on columns_translator.target_table = target_table_info.table_name
-    and columns_translator.target_schema = target_table_info.table_schema
-INNER JOIN PROD_CJVRDC.INFORMATION_SCHEMA.TABLES source_table_info 
-    on source_table_info.table_name = columns_translator.source_table //CONCAT('VRDC_',target_table_info.table_name)
-    and source_table_info.table_schema = (SELECT source_schema FROM params)
-WHERE target_table_info.table_schema = (SELECT target_schema FROM params)
-//AND target_table_info.table_name = 'PROVIDER_COST_UTILIZATION_ATTR'
-GROUP BY target_table_info.table_name, source_table_info.table_name, target_table_info.table_schema
-ORDER BY target_table_info.table_name
+    CONCAT('INSERT INTO ',(SELECT target_database FROM params),'.',columns_translator.target_schema,'.',columns_translator.target_table,' (',listagg(columns_translator.target_col, ','),') SELECT ',listagg(columns_translator.source_col, ','), ' FROM ',(SELECT source_database FROM params),'.',(SELECT source_schema FROM params),'.',columns_translator.source_table, ' WHERE EFFECTIVE_FLAG AND RECORD_STATUS_CD = ''a'';')
+FROM columns_translator 
+GROUP BY columns_translator.target_schema, columns_translator.target_table,columns_translator.source_table
+ORDER BY columns_translator.target_table
