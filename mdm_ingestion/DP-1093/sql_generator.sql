@@ -62,12 +62,7 @@ record_id_null AS (
   FROM (
       VALUES 
       (1, 'CJI_PAC_OUTCOMES_SCORECARD'), 
-      (2, 'CJI_PAC_COST_SCORECARD')//, 
-//      (3, 'PROFILE_LIST_MARKET_V01'), 
-//      (4, 'ICD_DX_X_NPI_BACKUP_0106'), 
-//      (5, 'HCPCS_X_NPI_BACKUP_0106'), 
-//      (6, 'ACO_X_PLAN_SWAP'), 
-//      (7, 'PARTD_ATTR_NPI_X_PLAN_SWAP')
+      (2, 'CJI_PAC_COST_SCORECARD')
       )
 ),
 columns_translator AS (
@@ -82,6 +77,8 @@ SELECT
       WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' AND record_id_null.column2 = NULL THEN 'RECORD_ID' 
       WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN 'NULL' /*Some tables have no RECORD_ID field, then we use NULL instead*/
       WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_ATTR_NPI' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
+      WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_PROVIDER' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
+      WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_SPECIALIST' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
       ELSE CONCAT('SRC_',target_cols_info.column_name) 
    END AS source_col,
    target_cols_info.ordinal_position
