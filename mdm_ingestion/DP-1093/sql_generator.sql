@@ -54,6 +54,7 @@ table_conf AS (
       ('REFERRALS','VRDC_REFERRALS','NA_REFERRAL_PRO_TO_PRO'),
       ('UTILIZATION_PCP','VRDC_UTILIZATION_PCP','NA_UTILIZATION_PCP')
   )
+  WHERE column2 <> 'N/A'
 ),
 /*Some tables have no RECORD_ID field, then we use NULL instead*/
 record_id_null AS (
@@ -71,31 +72,34 @@ record_id_null AS (
 ),
 columns_translator AS (
 SELECT 
-   stage_raw_cols.table_schema,
-   stage_raw_cols.table_name,
-   stage_raw_cols.column_name AS target_col,
+   target_cols_info.table_schema AS target_schema,
+   target_cols_info.table_name AS target_table,
+   target_cols_info.column_name AS target_col,
+   table_conf.source_table,
    CASE 
-      WHEN stage_raw_cols.column_name = 'LOAD_FILE_NM' AND table_conf.file_base_name = 'no data' THEN  CONCAT('''historical/historical/',stage_raw_cols.table_name,'''')
-      WHEN stage_raw_cols.column_name = 'LOAD_FILE_NM' THEN CONCAT('''historical/historical/',table_conf.file_base_name,'''')
-      WHEN stage_raw_cols.column_name = 'LOAD_FILE_ROW_NUM' AND record_id_null.column2 = NULL THEN 'RECORD_ID' 
-      WHEN stage_raw_cols.column_name = 'LOAD_FILE_ROW_NUM' THEN 'NULL' /*Some tables have no RECORD_ID field, then we use NULL instead*/
-      ELSE CONCAT('SRC_',stage_raw_cols.column_name) 
+      WHEN target_cols_info.column_name = 'LOAD_FILE_NM' AND table_conf.file_base_name = 'no data' THEN  CONCAT('''historical/historical/',target_cols_info.table_name,'''')
+      WHEN target_cols_info.column_name = 'LOAD_FILE_NM' THEN CONCAT('''historical/historical/',table_conf.file_base_name,'''')
+      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' AND record_id_null.column2 = NULL THEN 'RECORD_ID' 
+      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN 'NULL' /*Some tables have no RECORD_ID field, then we use NULL instead*/
+      WHEN table_conf.source_table = 'VRDC_PROFILE_LIST_ATTR_NPI' AND target_cols_info.column_name = 'PROVIDER_ID' THEN 'SRC_FK_PROVIDER_ID'
+      ELSE CONCAT('SRC_',target_cols_info.column_name) 
    END AS source_col
-FROM DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS stage_raw_cols
-LEFT JOIN record_id_null ON record_id_null.column2 = stage_raw_cols.table_name
-INNER JOIN table_conf ON table_conf.target_table = stage_raw_cols.table_name
-WHERE  stage_raw_cols.table_schema = (SELECT target_schema FROM params)
-ORDER BY stage_raw_cols.table_schema,stage_raw_cols.table_name,stage_raw_cols.ordinal_position
+FROM DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS target_cols_info
+LEFT JOIN record_id_null ON record_id_null.column2 = target_cols_info.table_name
+INNER JOIN table_conf ON table_conf.target_table = target_cols_info.table_name
+WHERE  target_cols_info.table_schema = (SELECT target_schema FROM params)
+ORDER BY target_cols_info.table_schema,target_cols_info.table_name,target_cols_info.ordinal_position
 )
 SELECT
     CONCAT('INSERT INTO ',(SELECT target_database FROM params),'.',target_table_info.table_schema,'.',target_table_info.table_name,' (',listagg(columns_translator.target_col, ','),') SELECT ',listagg(columns_translator.source_col, ','), ' FROM ',(SELECT source_database FROM params),'.',(SELECT source_schema FROM params),'.',source_table_info.table_name, ' WHERE EFFECTIVE_FLAG AND RECORD_STATUS_CD = ''a'';')
 FROM DEV_STAGE_RAW.INFORMATION_SCHEMA.TABLES target_table_info 
 INNER JOIN columns_translator 
-    on columns_translator.table_name = target_table_info.table_name
-    and columns_translator.table_schema = target_table_info.table_schema
+    on columns_translator.target_table = target_table_info.table_name
+    and columns_translator.target_schema = target_table_info.table_schema
 INNER JOIN PROD_CJVRDC.INFORMATION_SCHEMA.TABLES source_table_info 
-    on source_table_info.table_name = CONCAT('VRDC_',target_table_info.table_name)
-    and source_table_info.table_schema = 'ODS'
+    on source_table_info.table_name = columns_translator.source_table //CONCAT('VRDC_',target_table_info.table_name)
+    and source_table_info.table_schema = (SELECT source_schema FROM params)
 WHERE target_table_info.table_schema = (SELECT target_schema FROM params)
+//AND target_table_info.table_name = 'PROVIDER_COST_UTILIZATION_ATTR'
 GROUP BY target_table_info.table_name, source_table_info.table_name, target_table_info.table_schema
 ORDER BY target_table_info.table_name
