@@ -56,7 +56,7 @@ table_conf AS (
   )
   WHERE column2 <> 'N/A'
 ),
-/*Some tables have no RECORD_ID field, then we use NULL instead*/
+/*special treatment for some target table and col:*/
 special_cases AS (
   SELECT 
     column1 as source_table,
