@@ -128,7 +128,7 @@ INNER JOIN DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS target_cols
 LEFT JOIN rules
     ON rules.target_table = target_cols.table_name
     AND rules.target_col = target_cols.column_name
-LEFT JOIN PROD_CJVRDC.INFORMATION_SCHEMA.COLUMNS source_cols 
+LEFT JOIN PROD_CJVRDC_FE.INFORMATION_SCHEMA.COLUMNS source_cols 
     ON source_cols.table_name = table_list.source_table
     AND source_cols.table_schema = (SELECT source_schema FROM params)
     AND 
