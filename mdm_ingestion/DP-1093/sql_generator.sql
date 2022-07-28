@@ -18,8 +18,8 @@ table_conf AS (
       ('CJI_OUTCOMES_SCORECARD','VRDC_CJI_OUTCOMES_SCORECARD','vrdc_cji_outcomes_scorecard'),
       ('CJI_PAC_COST_SCORECARD','VRDC_CJI_PAC_COST_SCORECARD','no data'),
       ('CJI_PAC_OUTCOMES_SCORECARD','VRDC_CJI_PAC_OUTCOMES_SCORECARD','no data'),
-      ('CLAIM_ACTIVITY_ICD_DM','VRDC_CLAIM_ACTIVITY_ICD_DM','AXB_ICD_DX_X_NPI'),
-      ('CLAIM_ACTIVITY_PROC','VRDC_CLAIM_ACTIVITY_PROC','AXB_HCPCS_X_NPI'),
+      ('CLAIM_ACTIVITY_ICD_DM','VRDC_ICD_DX_X_NPI','AXB_ICD_DX_X_NPI'),
+      ('CLAIM_ACTIVITY_PROC','VRDC_HCPCS_X_NPI','AXB_HCPCS_X_NPI'),
       ('EGM_ACO','VRDC_EGM_ACO','no data'),
       ('EGM_GEO','VRDC_EGM_GEO','egm_geo'),
       ('EGM_NPI','VRDC_EGM_NPI','vrdc_egm_npi'),
@@ -54,10 +54,10 @@ table_conf AS (
       ('REFERRALS','VRDC_REFERRALS','NA_REFERRAL_PRO_TO_PRO'),
       ('UTILIZATION_PCP','VRDC_UTILIZATION_PCP','NA_UTILIZATION_PCP')
   )
-  WHERE column2 <> 'N/A'
+  WHERE source_table <> 'N/A'
 ),
 /*special treatment for some target table and col:*/
-special_cases AS (
+rules AS (
   SELECT 
     column1 as source_table,
     column2 as source_col,
@@ -71,7 +71,11 @@ special_cases AS (
       ('VRDC_PROFILE_LIST_PROVIDER','SRC_FK_PROVIDER_ID','PROVIDER_COST_UTILIZATION_PRAC','PROVIDER_ID'),
       ('VRDC_PROFILE_LIST_SPECIALIST','SRC_FK_PROVIDER_ID','PROVIDER_COST_UTILIZATION_SPECIALIST','PROVIDER_ID'),
       ('VRDC_PROFILE_LIST_FACILITY','SRC_FK_FACILITY_ID','PROVIDER_COST_UTILIZATION_FACILITY','PROVIDER_ID'),
-      ('VRDC_PROFILE_LIST_POST_ACUTE','SRC_FK_FACILITY_ID','PROVIDER_COST_UTILIZATION_POST_ACUTE','PROVIDER_ID')
+      ('VRDC_PROFILE_LIST_POST_ACUTE','SRC_FK_FACILITY_ID','PROVIDER_COST_UTILIZATION_POST_ACUTE','PROVIDER_ID'),
+      ('VRDC_ICD_DX_X_NPI','SRC_ICD_CD','CLAIM_ACTIVITY_ICD_DM','MEDICAL_CD'),
+      ('VRDC_ICD_DX_X_NPI','SRC_ICD_DESC','CLAIM_ACTIVITY_ICD_DM','MEDICAL_CD_DSCR'),
+      ('VRDC_HCPCS_X_NPI','SRC_CLM_TYPE','CLAIM_ACTIVITY_PROC','CLAIM_TYPE'),
+      ('VRDC_HCPCS_X_NPI','SRC_HCPCS_CD','CLAIM_ACTIVITY_PROC','MEDICAL_CD')
       )
 ),
 columns_translator AS (
@@ -83,15 +87,15 @@ SELECT
    CASE 
       WHEN target_cols_info.column_name = 'LOAD_FILE_NM' AND table_conf.file_base_name = 'no data' THEN  CONCAT('''historical/historical/',target_cols_info.table_name,'''')
       WHEN target_cols_info.column_name = 'LOAD_FILE_NM' THEN CONCAT('''historical/historical/',table_conf.file_base_name,'''')
-      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN COALESCE(special_cases.source_col,'RECORD_ID')
-      ELSE COALESCE(special_cases.source_col,CONCAT('SRC_',target_cols_info.column_name))
+      WHEN target_cols_info.column_name = 'LOAD_FILE_ROW_NUM' THEN COALESCE(rules.source_col,'RECORD_ID')
+      ELSE COALESCE(rules.source_col,CONCAT('SRC_',target_cols_info.column_name))
    END AS source_col,
    target_cols_info.ordinal_position
 FROM table_conf 
 INNER JOIN DEV_STAGE_RAW.INFORMATION_SCHEMA.COLUMNS target_cols_info ON table_conf.target_table = target_cols_info.table_name
-LEFT JOIN special_cases 
-    ON special_cases.target_table = target_cols_info.table_name
-    AND special_cases.target_col = target_cols_info.column_name
+LEFT JOIN rules 
+    ON rules.target_table = target_cols_info.table_name
+    AND rules.target_col = target_cols_info.column_name
 WHERE  target_cols_info.table_schema = (SELECT target_schema FROM params)
 ORDER BY target_cols_info.table_schema,target_cols_info.table_name,target_cols_info.ordinal_position
 )
