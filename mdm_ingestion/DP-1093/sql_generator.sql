@@ -16,30 +16,30 @@ table_conf AS (
     VALUES
       ('CJI_COST_SCORECARD','VRDC_CJI_COST_SCORECARD','vrdc_cji_cost_scorecard'),
       ('CJI_OUTCOMES_SCORECARD','VRDC_CJI_OUTCOMES_SCORECARD','vrdc_cji_outcomes_scorecard'),
-      ('CJI_PAC_COST_SCORECARD','VRDC_CJI_PAC_COST_SCORECARD','no data'),
-      ('CJI_PAC_OUTCOMES_SCORECARD','VRDC_CJI_PAC_OUTCOMES_SCORECARD','no data'),
+      ('CJI_PAC_COST_SCORECARD','VRDC_CJI_PAC_COST_SCORECARD','cji_pac_cost_sc_export'),  //<-- This value is comming from VRDC Export tab.
+      ('CJI_PAC_OUTCOMES_SCORECARD','VRDC_CJI_PAC_OUTCOMES_SCORECARD','cji_pac_outcomes_scorecard'),  //<-- This value is comming from VRDC Export tab.
       ('CLAIM_ACTIVITY_ICD_DM','VRDC_ICD_DX_X_NPI','AXB_ICD_DX_X_NPI'),
       ('CLAIM_ACTIVITY_PROC','VRDC_HCPCS_X_NPI','AXB_HCPCS_X_NPI'),
-      ('EGM_ACO','VRDC_EGM_ACO','no data'),
+      ('EGM_ACO','VRDC_EGM_ACO','no data'), //<-- There is no export info, using target col name
       ('EGM_GEO','VRDC_EGM_GEO','egm_geo'),
       ('EGM_NPI','VRDC_EGM_NPI','vrdc_egm_npi'),
       ('NA_BENCHMARKS','VRDC_NA_BENCHMARKS','BENCHMARKS_EXPORT'),
       ('NA_BILL_NPI_X_CCN','N/A','NA_BILL_NPI_X_CCN'),
       ('NA_BILL_NPI_X_NPI','N/A','NA_BILL_NPI_X_NPI'),
-      ('NA_BPCI_PCP','VRDC_NA_BPCI_PCP','no data'),
-      ('NA_BPCI_TRIGGER_PROVIDER','VRDC_NA_BPCI_TRIGGER_PROVIDER','no data'),
-      ('NA_GEOGRAPHY','VRDC_NA_GEOGRAPHY','no data'),
+      ('NA_BPCI_PCP','VRDC_NA_BPCI_PCP','bpci_pcp'), //<-- There is no export info, using target col name
+      //('NA_BPCI_TRIGGER_PROVIDER','VRDC_NA_BPCI_TRIGGER_PROVIDER','no data'),  //<-- According to Neil, is not in scope.
+      ('NA_GEOGRAPHY','VRDC_NA_GEOGRAPHY','no data'),//<-- There is no export info, using target col name
       ('NA_HASHED_TIN_X_BILL_NPI','VRDC_NA_HASHED_TIN_X_BILL_NPI','NA_HASHED_TIN_X_BILL_NPI'),
       ('NPI_X_PROVIDER_ZIP','VRDC_NPI_X_PROVIDER_ZIP','NA_REF_NPI_X_PROVIDER_ZIP'),
       ('NPI_X_SPECIALTY','VRDC_NPI_X_SPECIALTY','NPI_X_SPECIALTY_EXPORT'),
       ('PPI_COST_SCORE','VRDC_PPI_COST_SCORE','PPI_COST_SCORE'),
       ('PPI_COST_SCORECARD','VRDC_PPI_COST_SCORECARD','PPI_COST_SCORECARD'),
-      ('PPI_CROSSWALK','VRDC_PPI_CROSSWALK','no data'),
-      ('PPI_PAC_COST_SCORE','VRDC_PPI_PAC_COST_SCORE','no data'),
-      ('PPI_PAC_COST_SCORECARD','VRDC_PPI_PAC_COST_SCORECARD','no data'),
-      ('PPI_PAC_CROSSWALK','VRDC_PPI_PAC_CROSSWALK','no data'),
-      ('PPI_PAC_QUALITY_SCORE','VRDC_PPI_PAC_QUALITY_SCORE','no data'),
-      ('PPI_PAC_QUALITY_SCORECARD','VRDC_PPI_PAC_QUALITY_SCORECARD','no data'),
+      ('PPI_CROSSWALK','VRDC_PPI_CROSSWALK','no data'),//<-- There is no export info, using target col name
+      ('PPI_PAC_COST_SCORE','VRDC_PPI_PAC_COST_SCORE','no data'),//<-- There is no export info, using target col name
+      ('PPI_PAC_COST_SCORECARD','VRDC_PPI_PAC_COST_SCORECARD','no data'),//<-- There is no export info, using target col name
+      ('PPI_PAC_CROSSWALK','VRDC_PPI_PAC_CROSSWALK','no data'),//<-- There is no export info, using target col name
+      ('PPI_PAC_QUALITY_SCORE','VRDC_PPI_PAC_QUALITY_SCORE','no data'),//<-- There is no export info, using target col name
+      ('PPI_PAC_QUALITY_SCORECARD','VRDC_PPI_PAC_QUALITY_SCORECARD','no data'),//<-- There is no export info, using target col name
       ('PPI_QUALITY_SCORE','VRDC_PPI_QUALITY_SCORE','NA_NPI_PPI_OUTCOMES_OPH_PROD'),
       ('PPI_QUALITY_SCORECARD','VRDC_PPI_QUALITY_SCORECARD','PPI_OUTCOMES_SCD_OPH_PROD'),
       ('PRACTICE_GROUP_LOOKUP','VRDC_PRACTICE_GROUP_LOOKUP','na_ref_practice_group_lookup'),
@@ -47,8 +47,8 @@ table_conf AS (
       ('PROVIDER_COST_UTILIZATION_ATTR','VRDC_PROFILE_LIST_ATTR_NPI','METRICS_PCP_EXPORT'),
       ('PROVIDER_COST_UTILIZATION_ATTR_PG','VRDC_PROFILE_LIST_ATTR_PG','ATTR_PG_PROFILE_LIST_EXPORT'),
       ('PROVIDER_COST_UTILIZATION_FACILITY','VRDC_PROFILE_LIST_FACILITY','profile_list_facility'),
-      ('PROVIDER_COST_UTILIZATION_POST_ACUTE','VRDC_PROFILE_LIST_POST_ACUTE','no data'),
-      ('PROVIDER_COST_UTILIZATION_PRAC','VRDC_PROFILE_LIST_PROVIDER','no data'),
+      ('PROVIDER_COST_UTILIZATION_POST_ACUTE','VRDC_PROFILE_LIST_POST_ACUTE','profile_list_post_acute'),//<-- Multiples export name, just picking folder name
+      ('PROVIDER_COST_UTILIZATION_PRAC','VRDC_PROFILE_LIST_PROVIDER','vrdc_profile_List_provider'),//<-- This value is comming from VRDC Export tab.
       ('PROVIDER_COST_UTILIZATION_RNDRG_PG','VRDC_PROFILE_LIST_RNDRG_PG','profile_list_rndrg_pg_partd'),
       ('PROVIDER_COST_UTILIZATION_SPECIALIST','VRDC_PROFILE_LIST_SPECIALIST','profile_list_specialist'),
       ('REFERRALS','VRDC_REFERRALS','NA_REFERRAL_PRO_TO_PRO'),
